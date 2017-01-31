@@ -1,6 +1,8 @@
 Dir[File.dirname(__FILE__) + '/pieces/*.rb'].each {|file| require file }
 require_relative 'display'
 
+require 'colorize'
+
 class Board
 
   attr_reader :grid
@@ -36,8 +38,8 @@ class Board
   end
 
   def valid_move(piece, start_pos, end_pos)
-    return false if end_pos.any? { |idx| idx < 0 || idx > 7 }
-    true
+    in_bounds?(end_pos)
+    # end_pos.? { |idx| idx < 0 || idx > 7 }
   end
 
   def []=(pos, val)
@@ -59,5 +61,5 @@ end
 if __FILE__ == $0
   b = Board.new
   d = Display.new(b)
-  d.render
+  d.play
 end

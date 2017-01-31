@@ -1,7 +1,9 @@
 class Piece
 
-  def initialize(color)
+  def initialize(color,position, board)
     @color = color
+    @position = position
+    @board = board
   end
 
   def to_s
