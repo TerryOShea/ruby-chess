@@ -18,6 +18,7 @@ class Board
   def initialize
     @null_piece = NullPiece.instance
     @grid = Array.new(8) { Array.new(8) { @null_piece } }
+
     grid_setup
   end
 
@@ -28,8 +29,8 @@ class Board
         self[pos] = eval(piece_name.to_s.capitalize).new(color, pos, self)
       end
     end
-    # (0..7).each { |col| self[[1, col]] = Pawn.new(:black, [1, col], self) }
-    # (0..7).each { |col| self[[6, col]] = Pawn.new(:white, [6, col], self) }
+    (0..7).each { |col| self[[1, col]] = Pawn.new(:black, [1, col], self) }
+    (0..7).each { |col| self[[6, col]] = Pawn.new(:white, [6, col], self) }
   end
 
   def move_piece(start_pos, end_pos)
@@ -69,5 +70,6 @@ if __FILE__ == $0
   b = Board.new
   # d = Display.new(b)
   # d.play
-
+  pawn = b[[6,3]]
+  p pawn.moves
 end
