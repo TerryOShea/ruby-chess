@@ -16,25 +16,27 @@ class Board
   }
 
   def initialize
-    @grid = Array.new(8) { Array.new(8) }
+    @null_piece = NullPiece.instance
+    @grid = Array.new(8) { Array.new(8) { @null_piece } }
     grid_setup
   end
 
   def grid_setup
-    PIECES[:rook].each_with_index { |pos, i| self[pos] = Rook.new(i < 2 ? :black : :white) }
-    PIECES[:knight].each_with_index { |pos, i| self[pos] = Knight.new(i < 2 ? :black : :white) }
-    PIECES[:bishop].each_with_index { |pos, i| self[pos] = Bishop.new(i < 2 ? :black : :white) }
-    PIECES[:queen].each_with_index { |pos, i| self[pos] = Queen.new(i < 1 ? :black : :white) }
-    PIECES[:king].each_with_index { |pos, i| self[pos] = King.new(i < 1 ? :black : :white) }
-    (0..7).each { |col| self[[1, col]] = Pawn.new(:black) }
-    (0..7).each { |col| self[[6, col]] = Pawn.new(:white) }
+    PIECES.each do |piece_name, positions|
+      positions.each_with_index do |pos, i|
+        color = (i < positions.length/2 ? :black : :white)
+        self[pos] = eval(piece_name.to_s.capitalize).new(color, pos, self)
+      end
+    end
+    # (0..7).each { |col| self[[1, col]] = Pawn.new(:black, [1, col], self) }
+    # (0..7).each { |col| self[[6, col]] = Pawn.new(:white, [6, col], self) }
   end
 
   def move_piece(start_pos, end_pos)
-    raise "no piece at that position" if self[start_pos].nil?
+    raise "no piece at that position" if self[start_pos].empty?
     raise "you can't go there!" unless valid_move(self[start_pos], start_pos, end_pos)
 
-    self[start_pos], self[end_pos] = nil, self[start_pos]
+    self[start_pos], self[end_pos] = @null_piece, self[start_pos]
   end
 
   def valid_move(piece, start_pos, end_pos)
@@ -56,10 +58,16 @@ class Board
     (0..1).all? {|idx| (0..7).include?(pos[idx]) }
   end
 
+  def empty?(pos)
+    self[pos].class == NullPiece
+
+  end
+
 end
 
 if __FILE__ == $0
   b = Board.new
-  d = Display.new(b)
-  d.play
+  # d = Display.new(b)
+  # d.play
+
 end

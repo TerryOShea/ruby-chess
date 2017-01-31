@@ -12,7 +12,7 @@ class Display
     @board.grid.each_with_index do |row, row_index|
       str_row = []
       row.each_with_index do |square, col_index|
-        string_rep = get_string_rep(square)
+        string_rep = " #{square.to_s} "
 
         str_row << background(string_rep, row_index, col_index)
       end
@@ -30,14 +30,6 @@ class Display
 
 
   private
-
-  def get_string_rep(square)
-    if square.nil?
-      string_rep = "   "
-    else
-      string_rep = " #{square.to_s} "
-    end
-  end
 
   def background(string_rep, row_index, col_index)
     cursor_row, cursor_col = @cursor.cursor_pos
