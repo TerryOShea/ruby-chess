@@ -5,44 +5,63 @@ require 'colorize'
 
 class Board
 
-  attr_reader :grid
+  attr_accessor :grid, :selected_piece
 
   PIECES = {
     rook: [[0, 0], [0, 7], [7, 0], [7, 7]],
     knight: [[0, 1], [0, 6], [7, 1], [7, 6]],
     bishop: [[0, 2], [0, 5], [7, 2], [7, 5]],
-    queen: [[0, 3], [7, 4]],
-    king: [[0, 4], [7, 3]],
+    queen: [[0, 3], [7, 3]],
+    king: [[0, 4], [7, 4]],
+    pawn: [[1,0], [1,1], [1,2], [1,3], [1,4], [1,5], [1,6], [1,7],
+           [6,0], [6,1], [6,2], [6,3], [6,4], [6,5], [6,6], [6,7]]
   }
 
-  def initialize
-    @null_piece = NullPiece.instance
-    @grid = Array.new(8) { Array.new(8) { @null_piece } }
+  def initialize(grid = nil)
+    @grid = grid || grid_setup
+    @white_king_pos = find_king(:white)
+    @black_king_pos = find_king(:black)
+    @selected_piece = nil
+  end
 
-    grid_setup
+  def find_king(color)
+    (0...8).each do |row|
+      (0...8).each do |col|
+        next if self[[row, col]].color != color
+        return [row, col] if self[[row, col]].class == King
+      end
+    end
   end
 
   def grid_setup
+    grid = Array.new(8) { Array.new(8) { NullPiece.instance } }
+
     PIECES.each do |piece_name, positions|
       positions.each_with_index do |pos, i|
         color = (i < positions.length/2 ? :black : :white)
-        self[pos] = eval(piece_name.to_s.capitalize).new(color, pos, self)
+        class_name = piece_name.to_s.capitalize
+        grid[pos[0]][pos[1]] = eval(class_name).new(color, pos, self)
       end
     end
-    (0..7).each { |col| self[[1, col]] = Pawn.new(:black, [1, col], self) }
-    (0..7).each { |col| self[[6, col]] = Pawn.new(:white, [6, col], self) }
+    grid
   end
 
   def move_piece(start_pos, end_pos)
-    raise "no piece at that position" if self[start_pos].empty?
-    raise "you can't go there!" unless valid_move(self[start_pos], start_pos, end_pos)
+    self[start_pos], self[end_pos] = NullPiece.instance, self[start_pos]
 
-    self[start_pos], self[end_pos] = @null_piece, self[start_pos]
-  end
+    if self[end_pos].class == Pawn
+      self[end_pos].turns += 1
+    end
 
-  def valid_move(piece, start_pos, end_pos)
-    in_bounds?(end_pos)
-    # end_pos.? { |idx| idx < 0 || idx > 7 }
+    self[end_pos].position = end_pos.dup
+
+    if self[end_pos].class == King
+      if self[end_pos].color == :black
+        @black_king_pos = end_pos
+      else
+        @white_king_pos = end_pos
+      end
+    end
   end
 
   def []=(pos, val)
@@ -61,15 +80,65 @@ class Board
 
   def empty?(pos)
     self[pos].class == NullPiece
-
   end
 
-end
+  def in_check?(color)
+    if color == :black
+      king_pos = @black_king_pos
+      opposite_color = :white
+    else
+      king_pos = @white_king_pos
+      opposite_color = :black
+    end
 
-if __FILE__ == $0
-  b = Board.new
-  # d = Display.new(b)
-  # d.play
-  pawn = b[[6,3]]
-  p pawn.moves
+    (0...8).each do |row|
+      (0...8).each do |col|
+        next if self[[row, col]].color != opposite_color
+        return true if self[[row, col]].moves.include?(king_pos)
+      end
+    end
+
+    false
+  end
+
+  def checkmate?(color)
+
+    return false unless in_check?(color)
+    king_pos = (color == :black ? @black_king_pos : @white_king_pos)
+
+    (0...8).each do |row|
+      (0...8).each do |col|
+        if self[[row, col]].color == color
+          return false if self[[row, col]].valid_moves.length > 0
+        end
+      end
+    end
+
+    true
+  end
+
+  def clone_board
+    copy = Board.new(@grid)
+    copy.grid = clone_grid(copy)
+    copy
+  end
+
+  def clone_grid(copy_board)
+    grid_copy = []
+    (0...8).each do |row|
+      copy_row = []
+      (0...8).each do |col|
+        old_piece = self[[row, col]]
+        if old_piece.class == NullPiece
+          new_piece = NullPiece.instance
+        else
+          new_piece = old_piece.class.new(old_piece.color, old_piece.position, copy_board)
+        end
+        copy_row << new_piece
+      end
+      grid_copy << copy_row
+    end
+    grid_copy
+  end
+
 end
